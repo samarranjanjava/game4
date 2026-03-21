@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Number Comparison Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <style>
+      body {
+        font-family: Arial;
+        text-align: center;
+        background: #f0f8ff;
+      }
+
+      h1 {
+        color: #333;
+      }
+
+      .num-btn {
+        font-size: 24px;
+        padding: 15px;
+        margin: 10px;
+        border-radius: 10px;
+        border: none;
+        cursor: pointer;
+        background: #4caf50;
+        color: white;
+      }
+
+      .highlight {
+        background: yellow;
+        padding: 3px;
+      }
+
+      /* 🔴 Winning digit */
+      .win {
+        color: red;
+        font-weight: bold;
+        animation: blink 0.6s infinite;
+      }
+
+      /* blinking animation */
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+
+      .step {
+        margin: 10px;
+        font-size: 20px;
+      }
+
+      .big {
+        color: red;
+        font-weight: bold;
+        font-size: 28px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <h1>🎯 Compare Numbers</h1>
+
+    <button onclick="generate()">New Question</button>
+
+    <div id="numbers"></div>
+
+    <div id="result"></div>
+    <div id="explanation"></div>
+
+    <script>
+      let numbers = [];
+      let correct = "";
+
+      // Generate numbers
+      function generate() {
+        numbers = [];
+        document.getElementById("result").innerText = "";
+        document.getElementById("explanation").innerHTML = "";
+
+        for (let i = 0; i < 5; i++) {
+          let digits = Math.floor(Math.random() * 4) + 2;
+          let min = Math.pow(10, digits - 1);
+          let max = Math.pow(10, digits) - 1;
+          numbers.push(Math.floor(Math.random() * (max - min + 1)) + min);
+        }
+
+        correct = Math.max(...numbers).toString();
+
+        let html = "";
+        numbers.forEach((n) => {
+          html += `<button class="num-btn" onclick="check('${n}')">${n}</button>`;
+        });
+
+        document.getElementById("numbers").innerHTML = html;
+      }
+
+      // Check answer
+      function check(ans) {
+        if (ans === correct) {
+          document.getElementById("result").innerText = "✅ Correct!";
+          document.getElementById("explanation").innerHTML = "";
+        } else {
+          document.getElementById("result").innerText =
+            "❌ Wrong! Let's learn...";
+          explain();
+        }
+      }
+
+      // Explanation
+      async function explain() {
+        let exp = document.getElementById("explanation");
+
+        // Step 1: Digit count
+        exp.innerHTML += "<div class='step'>Step 1: Count digits</div>";
+
+        numbers.forEach((n) => {
+          exp.innerHTML += `<div class='step'>${n} → ${n.toString().length} digits</div>`;
+        });
+
+        await sleep(1500);
+
+        let maxDigits = Math.max(...numbers.map((n) => n.toString().length));
+        let candidates = numbers.filter(
+          (n) => n.toString().length === maxDigits,
+        );
+
+        exp.innerHTML += `<div class='step'>Numbers with max digits: ${candidates.join(", ")}</div>`;
+
+        await sleep(1500);
+
+        if (candidates.length === 1) {
+          exp.innerHTML += `<div class='big'>Biggest number is ${candidates[0]}</div>`;
+          return;
+        }
+
+        // Step 2: Place value comparison
+        exp.innerHTML += "<div class='step'>Step 2: Compare place values</div>";
+
+        let maxLen = candidates[0].toString().length;
+
+        for (let i = 0; i < maxLen; i++) {
+          await sleep(1500);
+
+          let digits = candidates.map((n) => Number(n.toString()[i]));
+          let maxDigit = Math.max(...digits);
+
+          exp.innerHTML += `<div class='step'>
+        Comparing position ${i + 1}:
+        ${candidates
+          .map((n) => {
+            let str = n.toString();
+
+            return str
+              .split("")
+              .map((d, idx) => {
+                if (idx === i) {
+                  if (Number(d) === maxDigit) {
+                    return `<span class="win">${d}</span>`; // 🔴 winner
+                  } else {
+                    return `<span class="highlight">${d}</span>`;
+                  }
+                }
+                return d;
+              })
+              .join("");
+          })
+          .join(" , ")}
+        </div>`;
+
+          await sleep(2000);
+
+          let newCandidates = candidates.filter(
+            (n) => Number(n.toString()[i]) === maxDigit,
+          );
+
+          if (newCandidates.length === 1) {
+            exp.innerHTML += `<div class='big'>Biggest number is ${newCandidates[0]}</div>`;
+            return;
+          }
+
+          candidates = newCandidates;
+        }
+      }
+
+      // Sleep
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      // Init
+      generate();
+    </script>
+  </body>
+</html>
